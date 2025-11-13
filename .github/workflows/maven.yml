@@ -42,6 +42,10 @@ jobs:
       needs: publish-job
       steps:
          - uses: actions/checkout@v4
+         - uses: actions/download-artifact@v4
+           with:
+              name: java-app
+              path: staging
          - uses: actions/setup-java@v4
            with:
               java-version: "17"
@@ -49,6 +53,9 @@ jobs:
               server-id: github
               settings-path: ${{ github.workspace }}
          - name: Deploy to GitHub Packages Maven Repository
-           run: mvn deploy -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.owner }}/${{github.repository}}
+           run: mvn deploy:deploy-file \
+              -Dfile=staging/java-cicd-demo-0.1.0-SNAPSHOT.jar \
+              -DrepositoryId=github \
+              -Durl=https://maven.pkg.github.com/${{ github.owner }}/${{ github.repository }}
            env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
