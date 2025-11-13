@@ -53,7 +53,7 @@ jobs:
          - name: Build Docker Image
            run: |
               cd 
-              docker build -t ghcr.io/${{ github.repository_owner }}/java-cicd:latest $GITHUB_WORKSPACE
+              docker build -t ghcr.io/${{ github.repository_owner }}/java-cicd:latest ${{github.workspace}}
 
          # Push the Docker image to GitHub Container Registry
          - name: Push Docker Image
