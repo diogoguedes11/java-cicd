@@ -35,3 +35,4 @@ jobs:
            with:
               name: java-app
               path: target/*.jar
+              retention-days: 5
