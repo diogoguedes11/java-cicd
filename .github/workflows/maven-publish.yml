@@ -23,8 +23,8 @@ jobs:
               name: java-app
 
          # Step 3: Deploy to GitHub Packages
-         - name: Deploy to GitHub Packages
-           run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+         - name: Download artifact from GitHub Packages
+           run: mvn dependency:get -Dartifact=com.example:java-app:1.0.0
            env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
            # Step 4: Log in to GitHub Container Registry
