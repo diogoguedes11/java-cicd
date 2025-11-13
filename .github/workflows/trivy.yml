@@ -1,35 +1,35 @@
-name: Trivy Vulnerability Scan
+# name: Trivy Vulnerability Scan
 
-on:
-   workflow_run:
-      workflows:
-         - Java CI with Maven
-      types:
-         - completed
+# on:
+#    workflow_run:
+#       workflows:
+#          - Java CI with Maven
+#       types:
+#          - completed
 
-jobs:
-   trivy-scan:
-      runs-on: ubuntu-latest
+# jobs:
+#    trivy-scan:
+#       runs-on: ubuntu-latest
 
-      steps:
-         - name: Checkout code
-           uses: actions/checkout@v4
+#       steps:
+#          - name: Checkout code
+#            uses: actions/checkout@v4
 
-         - name: Set up JDK 17
-           uses: actions/setup-java@v4
-           with:
-              java-version: "17"
-              distribution: "temurin"
+#          - name: Set up JDK 17
+#            uses: actions/setup-java@v4
+#            with:
+#               java-version: "17"
+#               distribution: "temurin"
 
-         - name: Install Maven dependencies
-           run: mvn dependency:resolve
+#          - name: Install Maven dependencies
+#            run: mvn dependency:resolve
 
-         - name: Run Trivy to scan dependencies
-           uses: aquasecurity/trivy-action@0.28.0
-           with:
-              scan-type: "fs"
+#          - name: Run Trivy to scan dependencies
+#            uses: aquasecurity/trivy-action@0.28.0
+#            with:
+#               scan-type: "fs"
 
-         - name: Run Trivy to scan for vulnerabilities
-           uses: aquasecurity/trivy-action@0.28.0
-           with:
-              scan-type: "rootfs"
+#          - name: Run Trivy to scan for vulnerabilities
+#            uses: aquasecurity/trivy-action@0.28.0
+#            with:
+#               scan-type: "config"

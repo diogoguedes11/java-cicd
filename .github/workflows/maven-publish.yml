@@ -1,0 +1,29 @@
+name: Deploy to GitHub Packages
+
+on:
+   workflow_run:
+      workflows:
+         - Build and Test
+      types:
+         - completed
+
+jobs:
+   deploy:
+      runs-on: ubuntu-latest
+
+      steps:
+         # Step 1: Checkout code
+         - name: Checkout code
+           uses: actions/checkout@v4
+
+         # Step 2: Download the artifact
+         - name: Download artifact
+           uses: actions/download-artifact@v3
+           with:
+              name: java-app
+
+         # Step 3: Deploy to GitHub Packages
+         - name: Deploy to GitHub Packages
+           run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+           env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
