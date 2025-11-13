@@ -36,6 +36,7 @@ jobs:
            with:
               name: java-app
               path: staging
+              retention-days: 1
 
    publish-github-packages:
       runs-on: ubuntu-latest
@@ -56,6 +57,6 @@ jobs:
            run: mvn deploy:deploy-file \
               -Dfile=staging/java-cicd-demo-0.1.0-SNAPSHOT.jar \
               -DrepositoryId=github \
-              -Durl=https://maven.pkg.github.com/${{ github.owner }}/${{ github.repository }}
+              -Durl=https://maven.pkg.github.com/diogoguedes11/java-cicd
            env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
