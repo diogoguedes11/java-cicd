@@ -26,11 +26,12 @@ jobs:
           java-version: "17"
           distribution: "temurin"
           cache: maven
+          cache-dependency-path: app/pom.xml
 
       # 1. Build the Application with Maven
       - name: Build with Maven
         run: mvn -B package --file pom.xml
-
+        working-directory: app
       # 2. Security: Trivy Filesystem Scan (Searches for secrets and vulnerabilities in code/dependencies)
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
