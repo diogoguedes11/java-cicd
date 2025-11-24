@@ -19,6 +19,18 @@ on:
 permissions:
   contents: read
   pull-requests: write # writes the terraform plan results to PRs
+env:
+  # Credenciais do Azure (Lidas dos GitHub Secrets)
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+  # Configuração do Remote Backend (Onde fica o tfstate)
+  TF_BACKEND_RESOURCE_GROUP: "rg-terraform-state"
+  TF_BACKEND_STORAGE_ACCOUNT: "tfstatestorageacct423921"
+  TF_BACKEND_CONTAINER: "tfstate"
+  TF_BACKEND_KEY: "poc.terraform.tfstate"
 jobs:
   terraform:
     name: "Terraform"
@@ -29,6 +41,22 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.0
+
+      # verify code
+      - name: Terraform format
+        run: terraform fmt -check
+      - name: Terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.TF_BACKEND_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.TF_BACKEND_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.TF_BACKEND_CONTAINER }}" \
+            -backend-config="key=${{ env.TF_BACKEND_KEY }}"
+
       - name: Terraform plan
         id: plan
         if: github.event.inputs.terraform_action == 'plan'
@@ -40,10 +68,8 @@ jobs:
       - name: Terraform apply
         if: github.event.inputs.terraform_action == 'apply'
         run: |
-          terraform init
           terraform apply -auto-approve -input=false tfplan
       - name: Terraform destroy
         if: github.event.inputs.terraform_action == 'destroy'
         run: |
-          terraform init
           terraform destroy -auto-approve -input=false
