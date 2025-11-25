@@ -8,7 +8,6 @@ on:
         default: "plan"
         type: choice
         options:
-          - plan
           - apply
           - destroy
   # pull_request:
@@ -59,17 +58,18 @@ jobs:
 
       - name: Terraform plan
         id: plan
-        if: github.event.inputs.terraform_action == 'plan'
         run: |
-          terraform plan -out=tfplan
+          if [ "${{ github.event.inputs.terraform_action }}" == "destroy" ]; then
+              echo "Generating destroy plan..."
+              terraform plan -destroy -out=tfplan -input=false
+          else
+              echo "Generating plan..."
+              terraform plan -out=tfplan -input=false
+          fi
       - name: Terraform plan status
         if: steps.plan.outcome == 'failure'
         run: exit 1
-      - name: Terraform apply
-        if: github.event.inputs.terraform_action == 'apply'
+      - name: Terraform apply (or destroy)
+        if: github.event.inputs.terraform_action == 'apply' || github.event.inputs.terraform_action == 'destroy'
         run: |
           terraform apply -auto-approve -input=false tfplan
-      - name: Terraform destroy
-        if: github.event.inputs.terraform_action == 'destroy'
-        run: |
-          terraform destroy -auto-approve -input=false
