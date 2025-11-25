@@ -19,7 +19,7 @@ public class DemoApplication {
 
 @RestController
 class HelloController {
-  private static final Logger logger = LoggerFactory.getLogger(HelloController.class);
+  private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
   @GetMapping("/")
   public String hello() {
@@ -30,7 +30,7 @@ class HelloController {
 
 @RestController
 class HealthController {
-  private static final Logger logger = LoggerFactory.getLogger(HelloController.class);
+  private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
   @GetMapping("/health")
   public String health() {
@@ -41,7 +41,7 @@ class HealthController {
 
 @RestController
 class InfoController {
-  private static final Logger logger = LoggerFactory.getLogger(HelloController.class);
+  private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);
 
   @GetMapping("/info")
   public String info() {
