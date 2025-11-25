@@ -32,7 +32,7 @@ env:
   TF_BACKEND_KEY: "poc.terraform.tfstate"
 jobs:
   terraform:
-    name: "Terraform"
+    name: "Terraform infra deployment"
     runs-on: ubuntu-latest
     defaults:
       run:
