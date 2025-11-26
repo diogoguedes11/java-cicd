@@ -27,9 +27,9 @@
         </dependency>
         <!-- Micrometer Prometheus -->
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <version>1.12.0</version>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-actuator</artifactId>
+          <version>${spring.boot.version}</version>
         </dependency>
         <!-- SLF4J + Logback -->
         <dependency>
