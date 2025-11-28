@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: java-demo-app-servicemonitor
+  labels:
+    release: kube-prometheus-stack # TODO: check later if this is correct
+spec:
+  selector:
+    matchLabels:
+      app: java-demo-app
+  endpoints:
+    - port: http-metrics
+      interval: 15s
+      path: /actuator/prometheus
