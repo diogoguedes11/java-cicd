@@ -58,3 +58,40 @@ resource "helm_release" "argocd" {
     YAML
   ]
 }
+
+resource "kubernetes_manifest" "java_app_argocd" {
+  depends_on = [helm_release.argocd]
+
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "java-demo-app"
+      namespace = "argocd"
+    }
+    spec = {
+      project = "default"
+
+      source = {
+        repoURL        = "https://github.com/diogoguedes11/java-cicd.git"
+        targetRevision = "main"
+        path           = "k8s"
+      }
+
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "java-app-ns" # namespace
+      }
+
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = [
+          "CreateNamespace=true"
+        ]
+      }
+    }
+  }
+}
