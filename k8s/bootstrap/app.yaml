@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: java-secure-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io # make sure app resources are deleted when app is deleted
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/diogoguedes11/java-cicd.git"
+    targetRevision: main
+    path: k8s/manifests
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: java-app-ns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
