@@ -7,5 +7,6 @@ spec:
   selector:
     app: java-demo-app
   ports:
-    - port: 8085
+    - name: http-metrics
+      port: 8085
       targetPort: 8085
