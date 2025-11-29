@@ -1,100 +1,72 @@
-# Java CI/CD with Terraform Infrastructure
+# Java CI/CD Pipeline with DevSecOps
 
-This project demonstrates a complete CI/CD pipeline for a Java Spring Boot application, containerized with Docker, and deployed using Terraform on Azure.
+This project demonstrates a secure CI/CD pipeline for a Java application, integrating DevSecOps best practices.
 
-## Project Structure
+## Table of Contents
 
-```
-├── app/                  # Java Spring Boot application
-│   ├── Dockerfile        # Docker build file for the app
-│   ├── pom.xml           # Maven build configuration
-│   └── src/              # Application source code
-├── infra/                # Infrastructure as Code (IaC) with Terraform
-│   ├── main.tf           # Main Terraform configuration
-│   ├── provider.tf       # Provider and backend config
-│   ├── variables.tf      # Input variables
-│   └── outputs.tf        # Output values
-├── .github/workflows/    # GitHub Actions workflows
-│   ├── maven.yml         # Java build, test, and Docker publish pipeline
-│   └── infra-deploy.yml  # Terraform infrastructure deployment pipeline
-└── README.md             # Project documentation
-```
+- [Overview](#overview)
+- [Pipeline Structure](#pipeline-structure)
+- [DevSecOps Practices](#devsecops-practices)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Features
-- **Java 17** Spring Boot application
-- **Maven** build and test automation
-- **Docker** containerization and publishing to GitHub Container Registry
-- **Terraform** for Azure infrastructure provisioning
-- **GitHub Actions** for CI/CD automation
+## Overview
 
-## Prerequisites
-- [Java 17+](https://adoptium.net/)
-- [Maven](https://maven.apache.org/)
-- [Docker](https://www.docker.com/)
-- [Terraform](https://www.terraform.io/)
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-- Azure subscription with permissions to create resources
+This repository provides an example of a Java application with a CI/CD pipeline that incorporates security at every stage (DevSecOps). The pipeline automates building, testing, security scanning, and deployment.
 
-## CI/CD Pipelines
+## Pipeline Structure
 
-### 1. Java Build & Publish (`.github/workflows/maven.yml`)
-- Checks out code
-- Builds and tests with Maven
-- Packages the app
-- Builds and pushes Docker image to GitHub Container Registry
+1. **Source Control**: Code is managed in GitHub.
+2. **Build**: Uses Maven/Gradle to compile and package the application.
+3. **Test**: Runs unit and integration tests.
+4. **Security Scanning**:
+  - Static code analysis (e.g., SonarQube, SpotBugs)
+  - Dependency vulnerability scanning (e.g., OWASP Dependency-Check)
+5. **Containerization**: Builds Docker images.
+6. **Image Scanning**: Scans Docker images for vulnerabilities (e.g., Trivy).
+7. **Deployment**: Deploys to staging/production environments.
+8. **Monitoring**: Integrates with monitoring and alerting tools.
 
-### 2. Infrastructure Deploy (`.github/workflows/infra-deploy.yml`)
-- Initializes Terraform
-- Applies infrastructure changes to Azure
-- Uses remote state backend (Azure Storage Account)
+## DevSecOps Practices
 
-## Infrastructure Setup
+- Automated security checks in the pipeline.
+- Dependency and container vulnerability scanning.
+- Code quality and static analysis.
+- Secrets management (never commit secrets to source control).
+- Least privilege for pipeline credentials.
 
-Terraform uses a remote backend for state management. Ensure the following Azure resources exist:
-- Resource Group: `rg-terraform-state`
-- Storage Account: `tfstatestorageacct423921`
-- Blob Container: `tfstate`
+## Getting Started
 
-If not, create them with:
-```bash
-az group create --name rg-terraform-state --location westeurope
-az storage account create --name tfstatestorageacct423921 --resource-group rg-terraform-state --location westeurope --sku Standard_LRS --encryption-services blob
-az storage container create --name tfstate --account-name tfstatestorageacct423921
-```
+1. **Clone the repository**:
+  ```sh
+  git clone https://github.com/your-org/java-cicd.git
+  cd java-cicd
+  ```
+2. **Build the project**:
+  ```sh
+  ./mvnw clean package
+  ```
+3. **Run tests**:
+  ```sh
+  ./mvnw test
+  ```
+4. **Run security scans**:
+  - Static analysis: `mvn spotbugs:check`
+  - Dependency check: `mvn org.owasp:dependency-check-maven:check`
+5. **Build Docker image**:
+  ```sh
+  docker build -t your-app:latest .
+  ```
+6. **Scan Docker image**:
+  ```sh
+  trivy image your-app:latest
+  ```
 
-## Local Development
+## Contributing
 
-1. **Build the app:**
-	```bash
-	cd app
-	mvn clean package
-	```
-2. **Run locally:**
-	```bash
-	java -jar target/*.jar
-	```
-3. **Build Docker image:**
-	```bash
-	docker build -t java-cicd-demo:latest .
-	```
-
-## Deploy Infrastructure
-
-1. **Initialize Terraform:**
-	```bash
-	cd infra
-	terraform init
-	```
-2. **Plan and apply:**
-	```bash
-	terraform plan
-	terraform apply
-	```
-
-## GitHub Actions Secrets
-- `AZURE_CREDENTIALS`: Service principal credentials for Terraform
-- `GITHUB_TOKEN`: For Docker image push
+Contributions are welcome! Please open issues or submit pull requests.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License.
