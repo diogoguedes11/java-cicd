@@ -24,7 +24,6 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 }
 
-
 # Get Prometheus CRDs
 data "http" "prometheus_crds" {
   url = "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml"

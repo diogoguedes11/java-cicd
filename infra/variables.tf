@@ -11,5 +11,9 @@ variable "resource_group_name" {
 }
 
 
-
+variable "environment" {
+  description = "The environment tag for resources"
+  type        = string
+  default     = "Production"
+}
 
