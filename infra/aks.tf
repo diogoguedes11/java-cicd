@@ -20,15 +20,3 @@ resource "azurerm_kubernetes_cluster" "this" {
     Environment = "Production"
   }
 }
-
-# Get Prometheus CRDs
-data "http" "prometheus_crds" {
-  url = "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml"
-}
-
-resource "kubectl_manifest" "prometheus_crds" {
-  yaml_body = data.http.prometheus_crds.response_body
-  # forces  the resource to be reapplied on every apply
-  server_side_apply = true
-}
-
