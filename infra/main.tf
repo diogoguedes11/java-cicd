@@ -35,3 +35,4 @@ resource "kubectl_manifest" "prometheus_crds" {
   # forces  the resource to be reapplied on every apply
   server_side_apply = true
 }
+
