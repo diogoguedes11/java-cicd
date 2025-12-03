@@ -1,22 +1,42 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: java-secure-app
+  name: observability-apps
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io # make sure app resources are deleted when app is deleted
 spec:
-  project: default
-  source:
-    repoURL: "https://github.com/diogoguedes11/java-cicd.git"
-    targetRevision: main
-    path: k8s/manifests
-  destination:
-    server: "https://kubernetes.default.svc"
-    namespace: java-app-ns
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - app: kube-prometheus-stack
+            path: gitops/kube-prometheus-stack/tst
+            namespace: observability
+            sourceType: kustomize
+          - app: java-demo-app
+            path: gitops/java-demo-app
+            namespace: java-app-ns
+            sourceType: directory
+  template:
+    metadata:
+      name: "{{.app}}"
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: "https://github.com/diogoguedes11/java-cicd.git"
+        targetRevision: main
+        path: "{{.path}}"
+        {{if eq .sourceType "kustomize"}}
+        kustomize:
+          enableHelm: true
+        {{end}}
+      destination:
+        server: "https://kubernetes.default.svc"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
