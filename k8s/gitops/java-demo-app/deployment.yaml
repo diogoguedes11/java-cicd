@@ -14,11 +14,11 @@ spec:
     spec:
       containers:
         - name: java-demo-app
-          image: acrjavacicda9mq0s.azurecr.io/java-app:latest
+          # image: acrjavacicda9mq0s.azurecr.io/java-app:latest\
+          image: ghcr.io/diogoguedes11/java-cicd:latest
           resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
+            memory: "64Mi"
+            cpu: "250m"
             limits:
               memory: "128Mi"
               cpu: "500m"
