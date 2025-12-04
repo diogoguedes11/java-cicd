@@ -3,15 +3,14 @@ kind: Application
 metadata:
   name: kube-prom-stack
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
-    repoURL: https://github.com/prometheus-community/helm-charts
+    repoURL: https://github.com/diogoguedes11/java-cicd.git
     targetRevision: main
-    chart: kube-prometheus-stack
-    helm:
-      values: |
-        # Add custom values here if needed
+    path: k8s/gitops/kube-prometheus-stack/tst
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
