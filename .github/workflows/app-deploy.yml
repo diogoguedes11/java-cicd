@@ -4,10 +4,10 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Infrastructure Deployment (Terraform)"]
-    types:
-      - completed
+  # workflow_run:
+  #   workflows: ["Infrastructure Deployment (Terraform)"]
+  #   types:
+  #     - completed
 
 env:
   REGISTRY: ${{ vars.ACR_LOGIN_SERVER }}
