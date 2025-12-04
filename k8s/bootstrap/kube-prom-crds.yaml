@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prom-stack-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0" # Deploy first
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/diogoguedes11/java-cicd.git
+    targetRevision: main
+    path: k8s/gitops/kube-prometheus-stack/crds
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: false # Never prune CRDs
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+      - ServerSideApply=true
