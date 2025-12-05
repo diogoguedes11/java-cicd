@@ -363,7 +363,7 @@ prometheus-windows-exporter:
   prometheus:
     monitor:
       enabled: true
-      jobLabel: jobLabel
+      k8s.observability.servicemonitor: "true"
 
   releaseLabel: true
 
@@ -4115,7 +4115,9 @@ prometheus:
     ## ServiceMonitors to be selected for target discovery.
     ## If {}, select all ServiceMonitors
     ##
-    serviceMonitorSelector: {}
+    serviceMonitorSelector:
+      matchLabels:
+        k8s.observability.servicemonitor: "true"
     ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
     # serviceMonitorSelector:
     #   matchLabels:
