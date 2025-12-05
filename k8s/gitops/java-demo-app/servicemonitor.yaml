@@ -5,6 +5,7 @@ metadata:
   namespace: java-app-ns
   labels:
     k8s.observability.servicemonitor: "true"
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:

@@ -8,11 +8,13 @@ spec:
   source:
     repoURL: "https://github.com/diogoguedes11/java-cicd"
     targetRevision: HEAD
-    path: k8s/bootstrap
+    path: k8s/gitops/java-demo-app
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: java-app-ns
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
