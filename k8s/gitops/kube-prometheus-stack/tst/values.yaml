@@ -304,10 +304,10 @@ grafana:
         foldersFromFilesStructure: true
     resources:
       limits:
-        memory: 256Mi
+        memory: 100Mi
       requests:
         cpu: 100m
-        memory: 128Mi
+        memory: 100Mi
   additionalDataSources:
     - name: Tempo
       type: tempo
@@ -327,12 +327,12 @@ grafana:
           enabled: true
         lokiSearch:
           datasourceUid: "loki"
-    - name: Mimir
-      type: prometheus
-      uid: mimir
-      access: proxy
-      editable: true
-      url: "http://mimir-distributed-nginx.observability.svc.cluster.local/prometheus"
+    # - name: Mimir
+    #   type: prometheus
+    #   uid: mimir
+    #   access: proxy
+    #   editable: true
+    #   url: "http://mimir-distributed-nginx.observability.svc.cluster.local/prometheus"
     - name: Loki
       type: loki
       uid: loki
