@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: java-demo-service
   namespace: java-app-ns
+  labels:
+    app: java-demo-app
 spec:
   selector:
     app: java-demo-app
@@ -10,3 +12,5 @@ spec:
     - name: http-metrics
       port: 8085
       targetPort: 8085
+      protocol: TCP
+  type: ClusterIP
