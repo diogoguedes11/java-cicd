@@ -310,47 +310,56 @@ grafana:
         cpu: 50m
         memory: 128Mi
   additionalDataSources:
-    - name: Tempo
-      type: tempo
-      uid: tempo
+    - name: Prometheus
+      type: prometheus
+      uid: prometheus
       access: proxy
-      editable: true
-      url: "http://tempo-distributed-query-frontend.observability.svc.cluster.local:3100"
+      editable: false
+      isDefault: true
+      url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
       jsonData:
-        tracesToLogsV2:
-          datasourceUid: "loki"
-          spanStartTimeShift: "-1h"
-          spanEndTimeShift: "1h"
-          filterByTraceID: true
-          filterBySpanID: false
-          tags: [{ key: "service.name", value: "service_name" }]
-        nodeGraph:
-          enabled: true
-        lokiSearch:
-          datasourceUid: "loki"
-    # - name: Mimir
-    #   type: prometheus
-    #   uid: mimir
-    #   access: proxy
-    #   editable: true
-    #   url: "http://mimir-distributed-nginx.observability.svc.cluster.local/prometheus"
-    - name: Loki
-      type: loki
-      uid: loki
-      access: proxy
-      editable: true
-      url: "http://loki-query-frontend.observability.svc.cluster.local:3100"
-      basicAuth: false
-      jsonData:
-        maxLines: 1000
-        derivedFields:
-          - datasourceName: Tempo
-            matcherType: "label"
-            matcherRegex: trace[_]?id
-            name: trace_id
-            url: "$${__value.raw}"
-            urlDisplayLabel: "View Trace"
-            datasourceUid: tempo
+        timeInterval: 30s
+  #   - name: Tempo
+  #     type: tempo
+  #     uid: tempo
+  #     access: proxy
+  #     editable: true
+  #     url: "http://tempo-distributed-query-frontend.observability.svc.cluster.local:3100"
+  #     jsonData:
+  #       tracesToLogsV2:
+  #         datasourceUid: "loki"
+  #         spanStartTimeShift: "-1h"
+  #         spanEndTimeShift: "1h"
+  #         filterByTraceID: true
+  #         filterBySpanID: false
+  #         tags: [{ key: "service.name", value: "service_name" }]
+  #       nodeGraph:
+  #         enabled: true
+  #       lokiSearch:
+  #         datasourceUid: "loki"
+  #   # - name: Mimir
+  #   #   type: prometheus
+  #   #   uid: mimir
+  #   #   access: proxy
+  #   #   editable: true
+  #   #   url: "http://mimir-distributed-nginx.observability.svc.cluster.local/prometheus"
+  #   - name: Loki
+  #     type: loki
+  #     uid: loki
+  #     access: proxy
+  #     editable: true
+  #     url: "http://loki-query-frontend.observability.svc.cluster.local:3100"
+  #     basicAuth: false
+  #     jsonData:
+  #       maxLines: 1000
+  #       derivedFields:
+  #         - datasourceName: Tempo
+  #           matcherType: "label"
+  #           matcherRegex: trace[_]?id
+  #           name: trace_id
+  #           url: "$${__value.raw}"
+  #           urlDisplayLabel: "View Trace"
+  #           datasourceUid: tempo
   resources:
     limits:
       cpu: 500m
