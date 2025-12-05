@@ -2,11 +2,14 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: java-demo-app-servicemonitor
-  namespace: java-app-ns
+  namespace: monitoring
   labels:
     k8s.observability.servicemonitor: "true"
     release: kube-prometheus-stack
 spec:
+  namespaceSelector:
+    matchNames:
+      - java-app-ns
   selector:
     matchLabels:
       app: java-demo-app
