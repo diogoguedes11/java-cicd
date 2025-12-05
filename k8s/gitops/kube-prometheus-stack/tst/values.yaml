@@ -304,10 +304,11 @@ grafana:
         foldersFromFilesStructure: true
     resources:
       limits:
-        memory: 100Mi
+        cpu: 200m
+        memory: 256Mi
       requests:
-        cpu: 100m
-        memory: 100Mi
+        cpu: 50m
+        memory: 128Mi
   additionalDataSources:
     - name: Tempo
       type: tempo
@@ -350,6 +351,13 @@ grafana:
             url: "$${__value.raw}"
             urlDisplayLabel: "View Trace"
             datasourceUid: tempo
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
   serviceMonitor:
     enabled: true
     targetLabels:
