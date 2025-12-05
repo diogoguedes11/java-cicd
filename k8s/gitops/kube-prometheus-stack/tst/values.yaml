@@ -110,12 +110,12 @@ prometheus:
     scrapeTimeout: 10s
     replicaExternalLabelName: "replica"
     prometheusExternalLabelName: "cluster"
-    remoteWrite:
-      - url: "http://mimir-distributed-nginx.observability.svc.cluster.local/api/v1/push"
-        queueConfig:
-          capacity: 10000
-          maxShards: 200
-          minShards: 1
+    # remoteWrite:
+    #   - url: "http://mimir-distributed-nginx.monitoring.svc.cluster.local/api/v1/push"
+    #     queueConfig:
+    #       capacity: 10000
+    #       maxShards: 200
+    #       minShards: 1
     podMonitorSelector:
       matchLabels:
         k8s.observability.podMonitor: "true"
@@ -134,22 +134,6 @@ prometheus:
       fsGroup: 65534
       runAsUser: 65534
     automountServiceAccountToken: null
-    # alertingEndpoints:
-    #   - namespace: observability
-    #     name: kube-prometheus-stack-alertmanager-0
-    #     port: http-web
-    #     scheme: http
-    #     pathPrefix: /
-    #   - namespace: observability
-    #     name: kube-prometheus-stack-alertmanager-1
-    #     port: http-web
-    #     scheme: http
-    #     pathPrefix: /
-    #   - namespace: observability
-    #     name: kube-prometheus-stack-alertmanager-2
-    #     port: http-web
-    #     scheme: http
-    #     pathPrefix: /
   resources:
     requests:
       cpu: 100m

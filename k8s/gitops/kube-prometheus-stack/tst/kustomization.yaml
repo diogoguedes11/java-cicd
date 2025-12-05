@@ -6,5 +6,5 @@ helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
     releaseName: kube-prometheus-stack
-    namespace: observability
+    namespace: monitoring
     valuesFile: values.yaml
