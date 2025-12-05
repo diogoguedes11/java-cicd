@@ -1,6 +1,13 @@
 # Compiled class files
 *.class
 
+# kubeconfig - NEVER commit credentials!
+**/.kubeconfig/**
+**/kubeconfig
+**/.kube/config
+**/kubeconfig-*
+kubeconfig
+
 # Log file
 *.log
 
@@ -57,3 +64,20 @@ Desktop.ini
 
 # Environment files
 .env
+.env.local
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Terraform
+**/.terraform/
+terraform.tfvars
+terraform.tfstate*
+**/*.tfstate*
+.terraformrc
+
+# Secrets and credentials
+secrets/
+**/secrets
+**/*.secret*
