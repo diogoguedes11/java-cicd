@@ -1,5 +1,4 @@
 
-
 resource "azurerm_kubernetes_cluster" "this" {
   name                = "java-cicd-aks"
   location            = azurerm_resource_group.this.location
