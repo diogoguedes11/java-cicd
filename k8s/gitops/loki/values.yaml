@@ -43,25 +43,6 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-  storage_config:
-    azure:
-      account_name: stobservabilitymp1e
-      container_name: loki
-      use_federated_token: true
-      request_timeout: 0
-  storage:
-    type: azure
-    azure:
-      accountName: stobservabilityzt1h
-      container_name: loki
-      useFederatedToken: true
-    bucketNames:
-      chunks: loki-chunks
-      ruler: loki-ruler
-      index: loki-index
-      admin: loki-admin
-  ingester:
-    autoforget_unhealthy: true
 gateway:
   replicas: 1
   autoscaling:
@@ -405,44 +386,7 @@ memcachedExporter:
     capabilities:
       drop: [ALL]
     allowPrivilegeEscalation: false
-# monitoring:
-#   # Dashboards for monitoring Loki
-#   dashboards:
-#     enabled: false
-#     namespace: observability
-#     annotations:
-#       grafana_folder: "Loki Dashboards"
-#     # -- Labels for the dashboards ConfigMap
-#     labels:
-#       grafana_dashboard: "1"
-#   # -- DEPRECATED Recording rules for monitoring Loki, required for some dashboards
-#   rules:
-#     enabled: true
-#     alerting: true
-#       observability
-#     labels:
-#       k8s.observability.rule: "true"
-#     additionalRuleLabels:
-#       cluster: obs-java-tst
-#       environment: tst
-#   serviceMonitor:
-#     enabled: false
-#     targetLabels:
-#       - cluster
-#       - environment
-#       - k8s.observability.component
-#     labels:
-#       k8s.observability.servicemonitor: "true"
-#       k8s.observability.component: "loki-distributed"
-#     interval: 15s
-#     relabelings:
-#       - action: replace
-#         targetLabel: cluster
-#         replacement: obs-java-tst
 
-#############################
-## Disabled components     ##
-#############################
 ruler:
   enabled: false
 test:
