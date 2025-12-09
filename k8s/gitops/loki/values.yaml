@@ -26,13 +26,29 @@ loki:
   containerSecurityContext:
     capabilities:
       drop:
-        - ALL
-    allowPrivilegeEscalation: false
-  podSecurityContext:
-    runAsGroup: 6501
-    runAsUser: 6501
-    seccompProfile:
-      type: RuntimeDefault
+        storage_config:
+          filesystem:
+            directory: /var/loki
+          boltdb_shipper:
+            shared_store: filesystem
+          index_cache:
+            enable_fifocache: true
+            fifocache:
+              max_size_items: 1024
+              max_size_bytes: 104857600
+      persistence:
+        enabled: true
+        storageClassName: default
+        accessModes:
+          - ReadWriteOnce
+        size: 10Gi
+    boltdb_shipper:
+      shared_store: azure
+    index_cache:
+      enable_fifocache: true
+      fifocache:
+        max_size_items: 1024
+        max_size_bytes: 104857600
 
   schemaConfig:
     configs:
@@ -324,7 +340,7 @@ resultsCache:
     environment: tst
   persistence:
     enabled: false
-    storageSize: 5G
+    storageSize: 1G
     mountPath: /data
 chunksCache:
   enabled: true
