@@ -1464,7 +1464,7 @@ grafana:
         timeInterval: 5s
       orgId: 1
       type: loki
-      url: http://{{ .Release.Name }}-loki:3100
+      url: http://loki-gateway.monitoring.svc.cluster.local:3100
       version: 1
       uid: loki-datasource
   # Flag to mark provisioned data sources for deletion if they are no longer configured.
