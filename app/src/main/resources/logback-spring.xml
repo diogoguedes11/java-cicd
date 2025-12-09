@@ -1,30 +1,28 @@
 <configuration>
-    <!--
-    Loki appender is commented out for now to avoid connection errors.
-    To enable Loki logging, uncomment the appender and appender-ref below.
-    -->
-    <!--
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+    <!-- Console appender for stdout logs -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
-        <loki4j>
-            <url>http://localhost:3100/loki/api/v1/push</url>
-            <batch>
-                <maxSize>10</maxSize>
-                <maxTime>5000</maxTime>
-            </batch>
-            <labels>
-                <label name="app" value="java-cicd-demo"/>
-                <label name="level" value="%level"/>
-            </labels>
-        </loki4j>
     </appender>
+
+    <!-- Loki appender for centralized logging -->
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>http://loki:3100/loki/api/v1/push</url>
+        </http>
+        <format>
+            <label>
+                <pattern>app=java-demo-app,namespace=java-app-ns,level=%level</pattern>
+            </label>
+            <message>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </message>
+        </format>
+    </appender>
+
     <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="LOKI"/>
-    </root>
-    -->
-    <root level="INFO">
-        <!-- Only console logging enabled -->
     </root>
 </configuration>
