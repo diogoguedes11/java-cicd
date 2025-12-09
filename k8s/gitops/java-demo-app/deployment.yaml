@@ -14,7 +14,6 @@ spec:
     spec:
       containers:
         - name: java-demo-app
-          # image: acrjavacicda9mq0s.azurecr.io/java-app:latest\
           image: ghcr.io/diogoguedes11/java-cicd:latest
           resources:
             memory: "64Mi"

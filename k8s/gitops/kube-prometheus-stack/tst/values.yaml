@@ -903,7 +903,7 @@ alertmanager:
     ## Metadata Labels and Annotations gets propagated to the Alertmanager pods.
     ##
     podMetadata: {}
-
+k8s/gitops/kube-prometheus-stack/tst/kustomization.yaml
     ##
     serviceName:
 
