@@ -1,4 +1,4 @@
-::stsdeploymentMode: Distributed
+deploymentMode: Distributed
 serviceAccount:
   create: true
   name: loki-sa
@@ -33,6 +33,7 @@ loki:
     runAsUser: 6501
     seccompProfile:
       type: RuntimeDefault
+
   schemaConfig:
     configs:
       - from: 2024-04-01
