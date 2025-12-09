@@ -1,120 +1,464 @@
-hytest_pod:
-  enabled: false
-  image: bats/bats:1.8.2
-  pullPolicy: IfNotPresent
-
+::stsdeploymentMode: Distributed
+serviceAccount:
+  create: true
+  name: loki-sa
 loki:
-  enabled: true
-  isDefault: true
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 3
+  server:
+    grpc_server_max_recv_msg_size: 8388608
+  limits_config:
+    ingestion_rate_mb: 30
+    ingestion_burst_size_mb: 30
+    max_global_streams_per_user: 10000
+    otlp_config:
+      resource_attributes:
+        attributes_config:
+          - action: index_label
+            attributes:
+              - k8s.cluster.environment
+              - k8s.cluster.name
+              - cluster.name
+              - cluster.environment
+              - server
+              - k8s.deployment.name
+  containerSecurityContext:
+    capabilities:
+      drop:
+        - ALL
+    allowPrivilegeEscalation: false
+  podSecurityContext:
+    runAsGroup: 6501
+    runAsUser: 6501
+    seccompProfile:
+      type: RuntimeDefault
+  schemaConfig:
+    configs:
+      - from: 2024-04-01
+        store: tsdb
+        object_store: azure
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  storage_config:
+    azure:
+      account_name: stobservabilitymp1e
+      container_name: loki
+      use_federated_token: true
+      request_timeout: 0
   storage:
-    type: filesystem
+    type: azure
+    azure:
+      accountName: stobservabilityzt1h
+      container_name: loki
+      useFederatedToken: true
     bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
-    filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
-  url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
-  readinessProbe:
-    httpGet:
-      path: /ready
-      port: http-metrics
-    initialDelaySeconds: 45
-  livenessProbe:
-    httpGet:
-      path: /ready
-      port: http-metrics
-    initialDelaySeconds: 45
-
-  datasource:
-    jsonData: "{}"
-    uid: ""
-
-promtail:
-  enabled: true
-  config:
-    logLevel: info
-    serverPort: 3101
-    clients:
-      - url: http://{{ .Release.Name }}:3100/loki/api/v1/push
-
-fluent-bit:
+      chunks: loki-chunks
+      ruler: loki-ruler
+      index: loki-index
+      admin: loki-admin
+  ingester:
+    autoforget_unhealthy: true
+gateway:
+  replicas: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage:
+    behavior: {}
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 100m
+      memory: 1Gi
+  podSecurityContext:
+    runAsGroup: 6501
+    runAsUser: 6501
+    seccompProfile:
+      type: RuntimeDefault
+  podLabels:
+    k8s.observability.component: loki-gateway
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  service:
+    labels:
+      k8s.observability.component: loki-gateway
+      cluster: obs-java-tst
+      cluster_type: observability
+      environment: tst
+indexGateway:
+  replicas: 2
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 256Mi
+  podLabels:
+    k8s.observability.component: loki-index-gateway
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-index-gateway
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+distributor:
+  replicas: 2
+  otlp_config:
+    default_resource_attributes_as_index_labels:
+      - "deployment.environment"
+      - "service.name"
+      - "host.name"
+      - "application.component"
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: null
+    customMetrics: []
+    behavior:
+      enabled: false
+      scaleDown: {}
+      scaleUp: {}
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  podLabels:
+    k8s.observability.component: loki-distributor
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-distributor
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+ingester:
+  replicas: 2
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: null
+    customMetrics: []
+    behavior:
+      enabled: false
+      scaleDown: {}
+      scaleUp: {}
+  maxUnavailable: 1
+  zoneAwareReplication:
+    enabled: false
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+  podLabels:
+    k8s.observability.component: loki-ingester
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-ingester
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+queryFrontend:
+  replicas: 2
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage:
+    behavior: {}
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  podLabels:
+    k8s.observability.component: loki-query-frontend
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-query-frontend
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+queryScheduler:
+  replicas: 2
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  podLabels:
+    k8s.observability.component: loki-query-scheduler
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-query-scheduler
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+querier:
+  replicas: 2
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage:
+    behavior: {}
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  podLabels:
+    k8s.observability.component: loki-querier
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-querier
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+compactor:
+  replicas: 2
+  maxUnavailable: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 500Mi
+  podLabels:
+    k8s.observability.component: loki-compactor
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  serviceLabels:
+    k8s.observability.component: loki-compactor
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+lokiCanary:
   enabled: false
-
-grafana:
-  enabled: false
-  sidecar:
-    datasources:
-      label: ""
-      labelValue: ""
-      enabled: true
-      maxLines: 1000
+  push: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
+  podLabels:
+    k8s.observability.component: loki-canary
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  service:
+    labels:
+      k8s.observability.component: loki-canary
+      cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+memcached:
   image:
-    tag: 10.3.3
+    repository: docker.io/memcached
+    tag: 1.6.38-alpine
+    pullPolicy: IfNotPresent
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 11211
+    runAsGroup: 11211
+    fsGroup: 11211
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+    allowPrivilegeEscalation: false
+resultsCache:
+  enabled: true
+  defaultValidity: 12h
+  timeout: 500ms
+  replicas: 1
+  port: 11211
+  allocatedMemory: 256
+  maxItemMemory: 5
+  connectionLimit: 16384
+  writebackSizeLimit: 500MB
+  writebackBuffer: 500000
+  writebackParallelism: 1
+  podDisruptionBudget:
+    maxUnavailable: 1
+  podLabels:
+    k8s.observability.component: loki-results-cache
+    policy-exception/k8sallowedrepos: ignore
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 320Mi
+  service:
+    labels:
+      k8s.observability.component: loki-results-cache
+      cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  persistence:
+    enabled: false
+    storageSize: 5G
+    mountPath: /data
+chunksCache:
+  enabled: true
+  defaultValidity: 12h
+  timeout: 500ms
+  replicas: 1
+  port: 11211
+  allocatedMemory: 256
+  maxItemMemory: 5
+  connectionLimit: 16384
+  writebackSizeLimit: 500MB
+  writebackBuffer: 500000
+  writebackParallelism: 1
+  podDisruptionBudget:
+    maxUnavailable: 1
+  podLabels:
+    k8s.observability.component: loki-chunks-cache
+    policy-exception/k8sallowedrepos: ignore
+    cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 320Mi
+  service:
+    labels:
+      k8s.observability.component: loki-chunks-cache
+      cluster: obs-java-tst
+    cluster_type: observability
+    environment: tst
+  persistence:
+    enabled: false
+    storageSize: 3G
+    mountPath: /data
+memcachedExporter:
+  enabled: true
+  image:
+    repository: prom/memcached-exporter
+    tag: v0.15.2
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 500Mi
+    limits:
+      memory: 500Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 11211
+    runAsGroup: 11211
+    fsGroup: 11211
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+    allowPrivilegeEscalation: false
+# monitoring:
+#   # Dashboards for monitoring Loki
+#   dashboards:
+#     enabled: false
+#     namespace: observability
+#     annotations:
+#       grafana_folder: "Loki Dashboards"
+#     # -- Labels for the dashboards ConfigMap
+#     labels:
+#       grafana_dashboard: "1"
+#   # -- DEPRECATED Recording rules for monitoring Loki, required for some dashboards
+#   rules:
+#     enabled: true
+#     alerting: true
+#       observability
+#     labels:
+#       k8s.observability.rule: "true"
+#     additionalRuleLabels:
+#       cluster: obs-java-tst
+#       environment: tst
+#   serviceMonitor:
+#     enabled: false
+#     targetLabels:
+#       - cluster
+#       - environment
+#       - k8s.observability.component
+#     labels:
+#       k8s.observability.servicemonitor: "true"
+#       k8s.observability.component: "loki-distributed"
+#     interval: 15s
+#     relabelings:
+#       - action: replace
+#         targetLabel: cluster
+#         replacement: obs-java-tst
 
-prometheus:
+#############################
+## Disabled components     ##
+#############################
+ruler:
   enabled: false
-  isDefault: false
-  url: http://{{ include "prometheus.fullname" .}}:{{ .Values.prometheus.server.service.servicePort }}{{ .Values.prometheus.server.prefixURL }}
-  datasource:
-    jsonData: "{}"
-
-filebeat:
+test:
   enabled: false
-  filebeatConfig:
-    filebeat.yml: |
-      # logging.level: debug
-      filebeat.inputs:
-      - type: container
-        paths:
-          - /var/log/containers/*.log
-        processors:
-        - add_kubernetes_metadata:
-            host: ${NODE_NAME}
-            matchers:
-            - logs_path:
-                logs_path: "/var/log/containers/"
-      output.logstash:
-        hosts: ["logstash-loki:5044"]
-
-logstash:
+bloomPlanner:
+  replicas: 0
+bloomBuilder:
+  replicas: 0
+bloomGateway:
+  replicas: 0
+minio:
   enabled: false
-  image: grafana/logstash-output-loki
-  imageTag: 1.0.1
-  filters:
-    main: |-
-      filter {
-        if [kubernetes] {
-          mutate {
-            add_field => {
-              "container_name" => "%{[kubernetes][container][name]}"
-              "namespace" => "%{[kubernetes][namespace]}"
-              "pod" => "%{[kubernetes][pod][name]}"
-            }
-            replace => { "host" => "%{[kubernetes][node][name]}"}
-          }
-        }
-        mutate {
-          remove_field => ["tags"]
-        }
-      }
-  outputs:
-    main: |-
-      output {
-        loki {
-          url => "http://loki:3100/loki/api/v1/push"
-          #username => "test"
-          #password => "test"
-        }
-        # stdout { codec => rubydebug }
-      }
-
-# proxy is currently only used by loki test pod
-# Note: If http_proxy/https_proxy are set, then no_proxy should include the
-# loki service name, so that tests are able to communicate with the loki
-# service.
-proxy:
-  http_proxy: ""
-  https_proxy: ""
-  no_proxy: ""
+singleBinary:
+  replicas: 0
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
