@@ -6,6 +6,15 @@ hytest_pod:
 loki:
   enabled: true
   isDefault: true
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
   url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
   readinessProbe:
     httpGet:
@@ -17,15 +26,7 @@ loki:
       path: /ready
       port: http-metrics
     initialDelaySeconds: 45
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
-    filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
+
   datasource:
     jsonData: "{}"
     uid: ""
