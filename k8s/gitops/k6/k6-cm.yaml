@@ -3,6 +3,8 @@ kind: K6
 metadata:
   name: loki-stress-test
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   parallelism: 1
   script:
