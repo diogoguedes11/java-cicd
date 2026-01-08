@@ -1,0 +1,22 @@
+apiVersion: k6.io/v1alpha1
+kind: K6
+metadata:
+  name: loki-stress-test
+  namespace: monitoring
+spec:
+  parallelism: 1
+  script:
+    configMap:
+      name: loki-test-script
+      file: script.js
+  runner:
+    env:
+      - name: MY_ENV_VAR
+        value: "test"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
