@@ -4,7 +4,7 @@ kind: Kustomization
 helmCharts:
   - name: k6
     repo: https://grafana.github.io/helm-charts
-    version: 6.6.0
+    version: 4.2.0
     releaseName: k6
     namespace: monitoring
     valuesFile: values.yaml
@@ -16,7 +16,7 @@ resources:
 configMapGenerator:
   - name: loki-test-script
     files:
-      - script.js
+      - loki-test.js
     # This will prevent Kustomize from adding a hash to the ConfigMap name
     options:
       disableNameSuffixHash: true
