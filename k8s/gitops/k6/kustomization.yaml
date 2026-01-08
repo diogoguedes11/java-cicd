@@ -8,3 +8,15 @@ helmCharts:
     releaseName: k6
     namespace: monitoring
     valuesFile: values.yaml
+
+resources:
+  - k6-cm.yaml
+
+# Create a ConfigMap from the k6 script file
+configMapGenerator:
+  - name: loki-test-script
+    files:
+      - script.js
+    # This will prevent Kustomize from adding a hash to the ConfigMap name
+    options:
+      disableNameSuffixHash: true
