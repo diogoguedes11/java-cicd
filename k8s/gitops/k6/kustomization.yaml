@@ -16,7 +16,7 @@ resources:
 configMapGenerator:
   - name: loki-test-script
     files:
-      - loki-test.js
+      - script.js
     # This will prevent Kustomize from adding a hash to the ConfigMap name
     options:
       disableNameSuffixHash: true
