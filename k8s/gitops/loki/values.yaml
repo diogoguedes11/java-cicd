@@ -2,6 +2,10 @@
 lokiCanary:
   enabled: false
 loki:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: default
   commonConfig:
     replication_factor: 1
   schemaConfig:
