@@ -5,6 +5,7 @@ helmCharts:
   - name: k6-operator
     repo: https://grafana.github.io/helm-charts
     version: 4.2.0
+    releaseName: ""
     namespace: monitoring
     valuesFile: values.yaml
 
