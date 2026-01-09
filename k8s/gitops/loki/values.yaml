@@ -15,8 +15,6 @@ loki:
     filesystem:
       directory: /var/loki/chunks
   auth_enabled: false
-  commonConfig:
-    replication_factor: 3
   server:
     grpc_server_max_recv_msg_size: 8388608
   limits_config:
