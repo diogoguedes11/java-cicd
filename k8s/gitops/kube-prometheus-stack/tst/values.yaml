@@ -1,36 +1,768 @@
-loki:
-  auth_enabled: false
+# --- Global Settings ---
+# Common labels applied to all resources created by this chart.
+#commonLabels:
 
-  commonConfig:
-    replication_factor: 1
-
-  schemaConfig:
-    configs:
-      - from: 2024-04-01
-        store: tsdb
-        object_store: filesystem
-        schema: v13
-        index:
-          prefix: index_
-          period: 24h
-
-  storage:
-    type: "filesystem"
-
-# Configuração do modo Monolítico (Tudo em um pod)
-deploymentMode: SingleBinary
-
-singleBinary:
+# --- CRD Management ---
+# Configuration for Custom Resource Definitions managed by the stack.
+crds:
+  enabled: true
+  # Security context for the CRD creation job pod.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  securityContext:
+    fsGroup: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+# --- Prometheus Operator ---
+# Configuration for the Prometheus Operator component.
+prometheusOperator:
+  tls:
+    enabled: false
+    tlsMinVersion: VersionTLS13
+    internalPort: 10250
+  admissionWebhooks:
+    enabled: false
+    failurePolicy: Ignore
+    patch:
+      enabled: false
+      resources:
+        requests:
+          cpu: 100m
+          memory: 100Mi
+        limits:
+          cpu: 100m
+          memory: 100Mi
+      annotations:
+        helm.sh/hook: post-install,post-upgrade
+        helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000
+        seccompProfile:
+          type: RuntimeDefault
+    certManager:
+      enabled: false
   replicas: 1
-  persistence:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+  service:
+    labels:
+      k8s.observability.component: kube-prometheus-stack-operator
+  serviceMonitor:
     enabled: true
-    size: 10Gi
-    storageClass: standard # Altere se usar outra classe de armazenamento (ex: gp2, longhorn)
+    interval: 60s
+    scrapeTimeout: 10s
+    targetLabels:
+      - cluster
+      - environment
+      - k8s.observability.component
+    metricRelabelings:
+      - sourceLabels: [k8s_observability_component]
+        targetLabel: component
+        regex: (.*)
+        action: replace
+      - regex: (k8s_observability_component)
+        action: labeldrop
+    additionalLabels:
+      k8s.observability.servicemonitor: "true"
+# --- Prometheus Instance ---
+# Configuration for the Prometheus server instance(s).
+prometheus:
+  serviceAccount:
+    create: true
+  service:
+    labels:
+      k8s.observability.component: kube-prometheus-stack-prometheus
+  serviceMonitor:
+    selfMonitor: true
+    enabled: true
+    targetLabels:
+      - cluster
+      - environment
+      - k8s.observability.component
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    paths:
+      - /prometheus(/|$)(.*)
+    pathType: ImplementationSpecific
+  prometheusSpec:
+    retetion: 7d
+    podMetadata:
+      labels:
+        k8s.observability.component: kube-prometheus-stack-prometheus
+    scrapeInterval: 60s
+    scrapeTimeout: 10s
+    replicaExternalLabelName: "replica"
+    prometheusExternalLabelName: "cluster"
+    # remoteWrite:
+    #   - url: "http://mimir-distributed-nginx.monitoring.svc.cluster.local/api/v1/push"
+    #     queueConfig:
+    #       capacity: 10000
+    #       maxShards: 200
+    #       minShards: 1
+    podMonitorSelector:
+      matchLabels:
+        k8s.observability.podMonitor: "true"
+    serviceMonitorSelector:
+      matchLabels:
+        k8s.observability.servicemonitor: "true"
+    probeSelector:
+      matchLabels:
+        k8s.observability.probe: "true"
+    ruleSelector:
+      matchLabels:
+        k8s.observability.rule: "true"
+    enableFeatures:
+      - auto-gomaxprocs
+    securityContext:
+      fsGroup: 65534
+      runAsUser: 65534
+    automountServiceAccountToken: null
+  resources:
+    requests:
+      cpu: 100m
+      memory: 250Mi
+    limits:
+      cpu: 100m
+      memory: 512Mi
+    metricRelabelings:
+      - sourceLabels: [k8s_observability_component]
+        targetLabel: component
+        regex: (.*)
+        action: replace
+      - regex: (k8s_observability_component)
+        action: labeldrop
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8sContainerCpuUsageSecondsTotal: true
+    k8sContainerMemoryCache: true
+    k8sContainerMemoryRss: true
+    k8sContainerMemorySwap: true
+    k8sContainerResource: true
+    k8sContainerMemoryWorkingSetBytes: true
+    k8sPodOwner: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubeControllerManager: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeSchedulerAlerting: true
+    kubeSchedulerRecording: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+    windows: true
+  ## Labels for default rules
+  labels:
+    k8s.observability.rule: "true"
+  ## Annotations for default rules
+  annotations: {}
+# --- Alertmanager ---
+# Configuration for the Alertmanager component.
+alertmanager:
+  enabled: true
+  config:
+    route:
+      # The default receiver if no other routes match.
+      receiver: "null"
+      # Send alerts with the name 'DemoAppDown' to our test webhook.
+      routes:
+        - receiver: "webhook-tester"
+          match:
+            alertname: TempoQueryFrontendIsDown
+        - receiver: "webhook-tester"
+          match:
+            alertname: TargetDown
+        - receiver: "webhook-tester"
+          match:
+            alertname: KubeNodeNotReady
 
-# Desabilita componentes distribuídos complexos
-backend:
-  replicas: 0
-read:
-  replicas: 0
-write:
-  replicas: 0
+    receivers:
+      - name: "null"
+      - name: "webhook-tester"
+        webhook_configs:
+          - url: "https://webhook.site/6b7ddea4-f42d-43aa-aac8-88e3d33c3a86"
+            send_resolved: true
+  alertmanagerSpec:
+    podMetadata:
+      labels:
+        k8s.observability.component: kube-prometheus-stack-alertmanager
+    replicas: 2
+    securityContext:
+      fsGroup: 2000
+      runAsGroup: 2000
+      runAsNonRoot: true
+      runAsUser: 3067
+  service:
+    labels:
+      k8s.observability.component: kube-prometheus-stack-alertmanager
+  serviceMonitor:
+    targetLabels:
+      - cluster
+      - environment
+      - k8s.observability.component
+    selfMonitor: true
+    interval: 60s
+    additionalLabels:
+      k8s.observability.servicemonitor: "true"
+# --- Grafana ---
+# Configuration for the Grafana visualization component.
+grafana:
+  enabled: true
+  testFramework:
+    enabled: false # Usually disabled in production/stable envs
+  serviceAccount:
+    create: true
+    autoMount: true
+  # ingress:
+  #   ## If true, Grafana Ingress will be created
+  #   ##
+  #   enabled: false
+
+  #   ## IngressClassName for Grafana Ingress.
+  #   ## Should be provided if Ingress is enable.
+  #   ##
+  #   ingressClassName: nginx # IMPORTANT: Change if you use a different ingress controller
+
+  #   ## Annotations for Grafana Ingress
+  #   ##
+  #   annotations:
+  #     # This annotation is for NGINX Ingress Controller.
+  #     # It strips /grafana from the path before sending it to the Grafana service.
+  #     nginx.ingress.kubernetes.io/rewrite-target: /$2
+  #     # kubernetes.io/tls-acme: "true"
+
+  #   ## Labels to be added to the Ingress
+  #   ##
+  #   labels: {}
+
+  #   ## Hostnames.
+  #   ## Must be provided if Ingress is enable.
+  #   ##
+  #   hosts:
+  #     - mpic-test.emsa.europa.eu
+
+  #   ## Path for grafana ingress
+  #   ## The regex is needed for the rewrite-target annotation to work.
+  #   path:
+  #     /grafana(/|$)(.*)
+
+  #     ## For Kubernetes >= 1.18 you should specify the pathType.
+  #   ## Use 'ImplementationSpecific' for regex paths with NGINX Ingress.
+  #   pathType: ImplementationSpecific
+
+  #   ## TLS configuration for grafana Ingress
+  #   ## Secret must be manually created in the namespace
+  #   ##
+  #   tls:
+  #     - secretName: mpic-test-emsa-tls # IMPORTANT: Ensure this TLS secret exists
+  #       hosts:
+  #         - mpic-test.emsa.europa.eu
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      annotations:
+        grafana_folder: "Kubernetes Core"
+      folder: /tmp/dashboards
+      folderAnnotation: grafana_folder
+      provider:
+        allowUiUpdates: true
+        foldersFromFilesStructure: true
+    resources:
+      limits:
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      access: proxy
+      editable: true
+      url: "http://tempo-distributed-query-frontend.observability.svc.cluster.local:3100"
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: "loki"
+          spanStartTimeShift: "-1h"
+          spanEndTimeShift: "1h"
+          filterByTraceID: true
+          filterBySpanID: false
+          tags: [{ key: "service.name", value: "service_name" }]
+        nodeGraph:
+          enabled: true
+        lokiSearch:
+          datasourceUid: "loki"
+    # - name: Mimir
+    #   type: prometheus
+    #   uid: mimir
+    #   access: proxy
+    #   editable: true
+    #   url: "http://mimir-distributed-nginx.observability.svc.cluster.local/prometheus"
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      editable: true
+      url: "http://loki-query-frontend.observability.svc.cluster.local:3100"
+      basicAuth: false
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - datasourceName: Tempo
+            matcherType: "label"
+            matcherRegex: trace[_]?id
+            name: trace_id
+            url: "$${__value.raw}"
+            urlDisplayLabel: "View Trace"
+            datasourceUid: tempo
+  serviceMonitor:
+    enabled: true
+    targetLabels:
+      - cluster
+      - environment
+      - k8s.observability.component
+    labels: # Note: These labels might be misintended, usually interval/scrapeTimeout go directly under serviceMonitor
+      interval: 60s
+      scrapeTimeout: 10s
+    metricRelabelings:
+      - sourceLabels: [k8s_observability_component]
+        targetLabel: component
+        regex: (.*)
+        action: replace
+      - regex: (k8s_observability_component)
+        action: labeldrop
+# --- Kubernetes Service Monitors ---
+# Global toggle for monitoring built-in Kubernetes components (if applicable in chart version)
+kubernetesServiceMonitors:
+  enabled: true # Assumed enabled based on individual components below being configured
+# --- Control Plane Monitoring ---
+# Configuration for monitoring Kubernetes control plane components.
+kubeApiServer:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+# --- Kubelet Monitoring ---
+# Configuration for monitoring Kubelet endpoints (including cAdvisor).
+kubelet:
+  # enabled: true # Assuming enabled as serviceMonitor is configured
+  serviceMonitor:
+    targetLabels:
+      - cluster
+      - environment
+      - k8s.observability.component
+    attachMetadata:
+      node: true
+    interval: 60s
+    probes: true # Enable scraping /metrics/probes endpoint
+    cAdvisor: true # Enable scraping /metrics/cadvisor endpoint
+    cAdvisorInterval: 60s # Specific interval for cAdvisor, overrides global if needed
+    additionalLabels: # Labels added to the ServiceMonitor object itself
+      k8s.observability.servicemonitor: "true"
+    # Relabelings for /metrics
+    metricRelabelings:
+      - sourceLabels: [k8s_observability_component]
+        targetLabel: component
+        regex: (.*)
+        action: replace
+      - regex: (k8s_observability_component)
+        action: labeldrop
+# --- Node Exporter ---
+# Configuration for the node-exporter component (host metrics).
+nodeExporter: # This usually controls the daemonset etc.
+  enabled: false
+  securityContext:
+    runAsNonRoot: true
+    fsGroup: 65534
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+  # ensure the container cannot escalate
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+
+  operatingSystems: # Specify which OS node-exporter daemonsets to enable
+    linux:
+      enabled: true
+    aix:
+      enabled: false
+    darwin:
+      enabled: false
+prometheus-node-exporter:
+  podLabels:
+    jobLabel: node-exporter
+    k8s.observability.component: node-exporter
+  prometheus:
+    monitor: # Configures the ServiceMonitor for node-exporter
+      enabled: true
+      interval: 60s
+      targetLabels:
+        - cluster
+        - environment
+        - k8s.observability.component
+      scrapeTimeout: 10s
+      attachMetadata:
+        node: true # Add node labels to metrics
+      metricRelabelings:
+        - sourceLabels: [k8s_observability_component]
+          targetLabel: component
+          regex: (.*)
+          action: replace
+        - regex: (k8s_observability_component)
+          action: labeldrop
+  service: # Configure the node-exporter service
+    labels:
+      jobLabel: kube-prometheus-stack-node-exporter
+      k8s.observability.component: kube-prometheus-stack-node-exporter
+# --- Kube State Metrics ---
+# Configuration for the kube-state-metrics component.
+kubeStateMetrics: # This usually controls the deployment/daemonset/etc.
+  enabled: true
+kube-state-metrics: # This often refers to the embedded sub-chart configuration.
+  prometheus:
+    monitor: # Configures the ServiceMonitor for kube-state-metrics
+      enabled: true
+      interval: 60s
+      scrapeTimeout: 10s
+      targetLabels:
+        - cluster
+        - environment
+        - k8s.observability.component
+  service:
+    enabled: true
+    port: 8080
+# --- CoreDNS Monitoring ---
+# Configuration for monitoring CoreDNS.
+coreDns:
+  serviceMonitor:
+    # enabled: true # Assuming enabled as interval is configured
+    interval: 60s
+    metricRelabelings:
+      - sourceLabels: [k8s_observability_component]
+        targetLabel: component
+        regex: (.*)
+        action: replace
+      - regex: (k8s_observability_component)
+        action: labeldrop
+    additionalLabels:
+      k8s.observability.servicemonitor: "true"
+additionalPrometheusRulesMap:
+  strimzi-kafka-rules:
+    groups:
+      - name: kafka
+        rules:
+          - alert: KafkaRunningOutOfSpace
+            expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} * 100 / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} < 15
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka is running out of free disk space"
+              description: "There are only {{ $value }} percent available at {{ $labels.persistentvolumeclaim }} PVC"
+          - alert: UnderReplicatedPartitions
+            expr: kafka_server_replicamanager_underreplicatedpartitions > 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka under replicated partitions"
+              description: "There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}"
+          - alert: AbnormalControllerState
+            expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name) != 1
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka abnormal controller state"
+              description: "There are {{ $value }} active controllers in the cluster"
+          - alert: OfflinePartitions
+            expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) > 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka offline partitions"
+              description: "One or more partitions have no leader"
+          - alert: UnderMinIsrPartitionCount
+            expr: kafka_server_replicamanager_underminisrpartitioncount > 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka under min ISR partitions"
+              description: "There are {{ $value }} partitions under the min ISR on {{ $labels.kubernetes_pod_name }}"
+          - alert: OfflineLogDirectoryCount
+            expr: kafka_log_logmanager_offlinelogdirectorycount > 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka offline log directories"
+              description: "There are {{ $value }} offline log directories on {{ $labels.kubernetes_pod_name }}"
+          - alert: ScrapeProblem
+            expr: up{kubernetes_namespace!~"openshift-.+",kubernetes_pod_name=~".+-kafka-[0-9]+"} == 0
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Prometheus unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}"
+              description: "Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes"
+          - alert: ClusterOperatorContainerDown
+            expr: count((container_last_seen{container="strimzi-cluster-operator"} > (time() - 90))) < 1 or absent(container_last_seen{container="strimzi-cluster-operator"})
+            for: 1m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Cluster Operator down"
+              description: "The Cluster Operator has been down for longer than 90 seconds"
+          - alert: KafkaBrokerContainersDown
+            expr: absent(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "All `kafka` containers down or in CrashLookBackOff status"
+              description: "All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes"
+          - alert: KafkaContainerRestartedInTheLast5Minutes
+            expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+            for: 5m
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "One or more Kafka containers restarted too often"
+              description: "One or more Kafka containers were restarted too often within the last 5 minutes"
+      - name: zookeeper
+        rules:
+          - alert: AvgRequestLatency
+            expr: zookeeper_avgrequestlatency > 10
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Zookeeper average request latency"
+              description: "The average request latency is {{ $value }} on {{ $labels.kubernetes_pod_name }}"
+          - alert: OutstandingRequests
+            expr: zookeeper_outstandingrequests > 10
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Zookeeper outstanding requests"
+              description: "There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}"
+          - alert: ZookeeperRunningOutOfSpace
+            expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data-(.+)-zookeeper-[0-9]+"} < 5368709120
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Zookeeper is running out of free disk space"
+              description: "There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC"
+          - alert: ZookeeperContainerRestartedInTheLast5Minutes
+            expr: count(count_over_time(container_last_seen{container="zookeeper"}[5m])) > 2 * count(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
+            for: 5m
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "One or more Zookeeper containers were restarted too often"
+              description: "One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored when the Zookeeper cluster is scaling up"
+          - alert: ZookeeperContainersDown
+            expr: absent(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "All `zookeeper` containers in the Zookeeper pods down or in CrashLookBackOff status"
+              description: "All `zookeeper` co ntainers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes"
+      - name: entityOperator
+        rules:
+          - alert: TopicOperatorContainerDown
+            expr: absent(container_last_seen{container="topic-operator",pod=~".+-entity-operator-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Container topic-operator in Entity Operator pod down or in CrashLookBackOff status"
+              description: "Container topic-operator in Entity Operator pod has been or in CrashLookBackOff status for 3 minutes"
+          - alert: UserOperatorContainerDown
+            expr: absent(container_last_seen{container="user-operator",pod=~".+-entity-operator-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Container user-operator in Entity Operator pod down or in CrashLookBackOff status"
+              description: "Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes"
+          - alert: EntityOperatorTlsSidecarContainerDown
+            expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-entity-operator-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Container tls-sidecar Entity Operator pod down or in CrashLookBackOff status"
+              description: "Container tls-sidecar in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes"
+      - name: connect
+        rules:
+          - alert: ConnectContainersDown
+            expr: absent(container_last_seen{container=~".+-connect",pod=~".+-connect-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "All Kafka Connect containers down or in CrashLookBackOff status"
+              description: "All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes"
+      - name: bridge
+        rules:
+          - alert: BridgeContainersDown
+            expr: absent(container_last_seen{container=~".+-bridge",pod=~".+-bridge-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "All Kafka Bridge containers down or in CrashLookBackOff status"
+              description: "All Kafka Bridge containers have been down or in CrashLookBackOff status for 3 minutes"
+          - alert: AvgProducerLatency
+            expr: strimzi_bridge_kafka_producer_request_latency_avg > 10
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka Bridge average consumer fetch latency"
+              description: "The average fetch latency is {{ $value }} on {{ $labels.clientId }}"
+          - alert: AvgConsumerFetchLatency
+            expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 500
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka Bridge consumer average fetch latency"
+              description: "The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}"
+          - alert: AvgConsumerCommitLatency
+            expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 200
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka Bridge consumer average commit latency"
+              description: "The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}"
+          - alert: Http4xxErrorRate
+            expr: strimzi_bridge_http_server_requestCount_total{code=~"^4..$", container=~"^.+-bridge", path !="/favicon.ico"} > 10
+            for: 1m
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka Bridge returns code 4xx too often"
+              description: "Kafka Bridge returns code 4xx too much ({{ $value }}) for the path {{ $labels.path }}"
+          - alert: Http5xxErrorRate
+            expr: strimzi_bridge_http_server_requestCount_total{code=~"^5..$", container=~"^.+-bridge"} > 10
+            for: 1m
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Kafka Bridge returns code 5xx too often"
+              description: "Kafka Bridge returns code 5xx too much ({{ $value }}) for the path {{ $labels.path }}"
+      - name: mirrorMaker
+        rules:
+          - alert: MirrorMakerContainerDown
+            expr: absent(container_last_seen{container=~".+-mirror-maker",pod=~".+-mirror-maker-.+"})
+            for: 3m
+            labels:
+              severity: major
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "All Kafka Mirror Maker containers down or in CrashLookBackOff status"
+              description: "All Kafka Mirror Maker containers have been down or in CrashLookBackOff status for 3 minutes"
+      - name: kafkaExporter
+        rules:
+          - alert: UnderReplicatedPartition
+            expr: kafka_topic_partition_under_replicated_partition > 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Topic has under-replicated partitions"
+              description: "Topic  {{ $labels.topic }} has {{ $value }} under-replicated partition {{ $labels.partition }}"
+          - alert: TooLargeConsumerGroupLag
+            expr: kafka_consumergroup_lag > 1000
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "Consumer group lag is too big"
+              description: "Consumer group {{ $labels.consumergroup}} lag is too big ({{ $value }}) on topic {{ $labels.topic }}/partition {{ $labels.partition }}"
+          - alert: NoMessageForTooLong
+            expr: changes(kafka_topic_partition_current_offset{topic!="__consumer_offsets"}[10m]) == 0
+            for: 10s
+            labels:
+              severity: warning
+              k8s.observability.rule: "true"
+            annotations:
+              summary: "No message for 10 minutes"
+              description: "There is no messages in topic {{ $labels.topic}}/partition {{ $labels.partition }} for 10 minutes"
