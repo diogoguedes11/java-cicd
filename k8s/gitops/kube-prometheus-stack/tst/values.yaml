@@ -247,50 +247,6 @@ grafana:
   serviceAccount:
     create: true
     autoMount: true
-  # ingress:
-  #   ## If true, Grafana Ingress will be created
-  #   ##
-  #   enabled: false
-
-  #   ## IngressClassName for Grafana Ingress.
-  #   ## Should be provided if Ingress is enable.
-  #   ##
-  #   ingressClassName: nginx # IMPORTANT: Change if you use a different ingress controller
-
-  #   ## Annotations for Grafana Ingress
-  #   ##
-  #   annotations:
-  #     # This annotation is for NGINX Ingress Controller.
-  #     # It strips /grafana from the path before sending it to the Grafana service.
-  #     nginx.ingress.kubernetes.io/rewrite-target: /$2
-  #     # kubernetes.io/tls-acme: "true"
-
-  #   ## Labels to be added to the Ingress
-  #   ##
-  #   labels: {}
-
-  #   ## Hostnames.
-  #   ## Must be provided if Ingress is enable.
-  #   ##
-  #   hosts:
-  #     - mpic-test.emsa.europa.eu
-
-  #   ## Path for grafana ingress
-  #   ## The regex is needed for the rewrite-target annotation to work.
-  #   path:
-  #     /grafana(/|$)(.*)
-
-  #     ## For Kubernetes >= 1.18 you should specify the pathType.
-  #   ## Use 'ImplementationSpecific' for regex paths with NGINX Ingress.
-  #   pathType: ImplementationSpecific
-
-  #   ## TLS configuration for grafana Ingress
-  #   ## Secret must be manually created in the namespace
-  #   ##
-  #   tls:
-  #     - secretName: mpic-test-emsa-tls # IMPORTANT: Ensure this TLS secret exists
-  #       hosts:
-  #         - mpic-test.emsa.europa.eu
   sidecar:
     dashboards:
       enabled: true
