@@ -10,3 +10,4 @@ argocd login localhost:8080 --username admin --password  $ARGO_PASSWORD --insecu
 
 
 
+

@@ -3,6 +3,14 @@ serviceAccount:
   create: true
   name: loki-sa
 loki:
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: loki-chunks
+      ruler: loki-ruler
+      admin: loki-admin
+    filesystem:
+      directory: /var/loki/chunks
   auth_enabled: false
   commonConfig:
     replication_factor: 3
