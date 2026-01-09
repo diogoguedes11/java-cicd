@@ -1,434 +1,79 @@
-deploymentMode: Distributed
-serviceAccount:
-  create: true
-  name: loki-sa
+---
 loki:
-  deploymentMode: SingleBinary
   commonConfig:
     replication_factor: 1
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: loki-chunks
-      ruler: loki-ruler
-      admin: loki-admin
-    filesystem:
-      directory: /var/loki/chunks
-  auth_enabled: false
-  server:
-    grpc_server_max_recv_msg_size: 8388608
-  limits_config:
-    ingestion_rate_mb: 30
-    ingestion_burst_size_mb: 30
-    max_global_streams_per_user: 10000
-    otlp_config:
-      resource_attributes:
-        attributes_config:
-          - action: index_label
-            attributes:
-              - k8s.cluster.environment
-              - k8s.cluster.name
-              - cluster.name
-              - cluster.environment
-              - server
-              - k8s.deployment.name
-  containerSecurityContext:
-    capabilities:
-      drop:
-        storage_config:
-          filesystem:
-            directory: /var/loki
-          boltdb_shipper:
-            shared_store: filesystem
-          index_cache:
-            enable_fifocache: true
-            fifocache:
-              max_size_items: 1024
-              max_size_bytes: 104857600
-      persistence:
-        enabled: true
-        storageClassName: default
-        accessModes:
-          - ReadWriteOnce
-        size: 10Gi
-    boltdb_shipper:
-      shared_store: azure
-    index_cache:
-      enable_fifocache: true
-      fifocache:
-        max_size_items: 1024
-        max_size_bytes: 104857600
-
   schemaConfig:
     configs:
-      - from: 2024-04-01
+      - from: "2024-04-01"
         store: tsdb
-        object_store: azure
+        object_store: s3
         schema: v13
         index:
           prefix: loki_index_
           period: 24h
-gateway:
-  replicas: 1
-  autoscaling:
-    enabled: false
-    minReplicas: 2
-    maxReplicas: 3
-    targetCPUUtilizationPercentage: 60
-    targetMemoryUtilizationPercentage:
-    behavior: {}
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      cpu: 100m
-      memory: 1Gi
-  podSecurityContext:
-    runAsGroup: 6501
-    runAsUser: 6501
-    seccompProfile:
-      type: RuntimeDefault
-  podLabels:
-    k8s.observability.component: loki-gateway
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  service:
-    labels:
-      k8s.observability.component: loki-gateway
-      cluster: obs-java-tst
-      cluster_type: observability
-      environment: tst
-indexGateway:
-  replicas: 2
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 256Mi
-  podLabels:
-    k8s.observability.component: loki-index-gateway
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-index-gateway
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-distributor:
-  replicas: 2
-  otlp_config:
-    default_resource_attributes_as_index_labels:
-      - "deployment.environment"
-      - "service.name"
-      - "host.name"
-      - "application.component"
-  autoscaling:
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 5
-    targetCPUUtilizationPercentage: 60
-    targetMemoryUtilizationPercentage: null
-    customMetrics: []
-    behavior:
-      enabled: false
-      scaleDown: {}
-      scaleUp: {}
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
-  podLabels:
-    k8s.observability.component: loki-distributor
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-distributor
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-ingester:
-  replicas: 2
-  autoscaling:
-    enabled: false
-    minReplicas: 3
-    maxReplicas: 5
-    targetCPUUtilizationPercentage: 60
-    targetMemoryUtilizationPercentage: null
-    customMetrics: []
-    behavior:
-      enabled: false
-      scaleDown: {}
-      scaleUp: {}
-  maxUnavailable: 1
-  zoneAwareReplication:
-    enabled: false
-  resources:
-    requests:
-      cpu: 200m
-      memory: 1Gi
-    limits:
-      memory: 2Gi
-  podLabels:
-    k8s.observability.component: loki-ingester
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-ingester
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-queryFrontend:
-  replicas: 2
-  autoscaling:
-    enabled: false
-    minReplicas: 2
-    maxReplicas: 3
-    targetCPUUtilizationPercentage: 60
-    targetMemoryUtilizationPercentage:
-    behavior: {}
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  podLabels:
-    k8s.observability.component: loki-query-frontend
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-query-frontend
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-queryScheduler:
-  replicas: 2
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  podLabels:
-    k8s.observability.component: loki-query-scheduler
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-query-scheduler
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-querier:
-  replicas: 2
-  autoscaling:
-    enabled: false
-    minReplicas: 2
-    maxReplicas: 3
-    targetCPUUtilizationPercentage: 60
-    targetMemoryUtilizationPercentage:
-    behavior: {}
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-  podLabels:
-    k8s.observability.component: loki-querier
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-querier
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-compactor:
-  replicas: 2
-  maxUnavailable: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 500Mi
-  podLabels:
-    k8s.observability.component: loki-compactor
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  serviceLabels:
-    k8s.observability.component: loki-compactor
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-lokiCanary:
-  enabled: false
-  push: false
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      memory: 128Mi
-  podLabels:
-    k8s.observability.component: loki-canary
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  service:
-    labels:
-      k8s.observability.component: loki-canary
-      cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-memcached:
-  image:
-    repository: docker.io/memcached
-    tag: 1.6.38-alpine
-    pullPolicy: IfNotPresent
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 11211
-    runAsGroup: 11211
-    fsGroup: 11211
-    seccompProfile:
-      type: RuntimeDefault
-  containerSecurityContext:
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop: [ALL]
-    allowPrivilegeEscalation: false
-resultsCache:
-  enabled: true
-  defaultValidity: 12h
-  timeout: 500ms
-  replicas: 1
-  port: 11211
-  allocatedMemory: 256
-  maxItemMemory: 5
-  connectionLimit: 16384
-  writebackSizeLimit: 500MB
-  writebackBuffer: 500000
-  writebackParallelism: 1
-  podDisruptionBudget:
-    maxUnavailable: 1
-  podLabels:
-    k8s.observability.component: loki-results-cache
-    policy-exception/k8sallowedrepos: ignore
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 320Mi
-  service:
-    labels:
-      k8s.observability.component: loki-results-cache
-      cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  persistence:
-    enabled: false
-    storageSize: 1G
-    mountPath: /data
-chunksCache:
-  enabled: true
-  defaultValidity: 12h
-  timeout: 500ms
-  replicas: 1
-  port: 11211
-  allocatedMemory: 256
-  maxItemMemory: 5
-  connectionLimit: 16384
-  writebackSizeLimit: 500MB
-  writebackBuffer: 500000
-  writebackParallelism: 1
-  podDisruptionBudget:
-    maxUnavailable: 1
-  podLabels:
-    k8s.observability.component: loki-chunks-cache
-    policy-exception/k8sallowedrepos: ignore
-    cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 320Mi
-  service:
-    labels:
-      k8s.observability.component: loki-chunks-cache
-      cluster: obs-java-tst
-    cluster_type: observability
-    environment: tst
-  persistence:
-    enabled: false
-    storageSize: 3G
-    mountPath: /data
-memcachedExporter:
-  enabled: true
-  image:
-    repository: prom/memcached-exporter
-    tag: v0.15.2
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      cpu: 100m
-      memory: 500Mi
-    limits:
-      memory: 500Mi
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 11211
-    runAsGroup: 11211
-    fsGroup: 11211
-    seccompProfile:
-      type: RuntimeDefault
-  containerSecurityContext:
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop: [ALL]
-    allowPrivilegeEscalation: false
+  ingester:
+    chunk_encoding: snappy
+  tracing:
+    enabled: true
+  querier:
+    # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
+    max_concurrent: 2
 
-ruler:
-  enabled: false
-test:
-  enabled: false
-bloomPlanner:
-  replicas: 0
-bloomBuilder:
-  replicas: 0
-bloomGateway:
-  replicas: 0
-minio:
-  enabled: false
+#gateway:
+#  ingress:
+#    enabled: true
+#    hosts:
+#      - host: FIXME
+#        paths:
+#          - path: /
+#            pathType: Prefix
+
+deploymentMode: SingleBinary
 singleBinary:
-  replicas: 0
+  replicas: 1
+  resources:
+    limits:
+      cpu: 3
+      memory: 4Gi
+    requests:
+      cpu: 2
+      memory: 2Gi
+  extraEnv:
+    # Keep a little bit lower than memory limits
+    - name: GOMEMLIMIT
+      value: 3750MiB
+
+chunksCache:
+  # default is 500MB, with limited memory keep this smaller
+  writebackSizeLimit: 10MB
+
+# Enable minio for storage
+minio:
+  enabled: true
+
+# Zero out replica counts of other deployment modes
 backend:
   replicas: 0
 read:
   replicas: 0
 write:
+  replicas: 0
+
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
   replicas: 0
