@@ -1,6 +1,6 @@
 ---
 lokiCanary:
-  enabled: false
+  enabled: true
 loki:
   persistence:
     enabled: true
