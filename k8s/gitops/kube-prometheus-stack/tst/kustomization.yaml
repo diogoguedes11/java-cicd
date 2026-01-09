@@ -2,21 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 helmCharts:
-  # Loki
-  - name: loki
-    repo: https://grafana.github.io/helm-charts
-    version: 6.6.0
-    releaseName: loki
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    releaseName: kube-prometheus-stack
     namespace: monitoring
     valuesFile: values.yaml
-
-  # Promtail
-  - name: promtail
-    repo: https://grafana.github.io/helm-charts
-    version: 6.15.3
-    releaseName: promtail
-    namespace: monitoring
-    valuesInline:
-      config:
-        clients:
-          - url: http://loki:3100/loki/api/v1/push
