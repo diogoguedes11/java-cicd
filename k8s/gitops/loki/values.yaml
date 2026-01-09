@@ -3,6 +3,9 @@ serviceAccount:
   create: true
   name: loki-sa
 loki:
+  deploymentMode: SingleBinary
+  commonConfig:
+    replication_factor: 1
   storage:
     type: filesystem
     bucketNames:
